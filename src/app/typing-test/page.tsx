@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { TypingTest } from "@/components/typing-test/TypingTest";
-import { AdSlot } from "@/components/layout/AdSlot";
 import { Faq } from "@/components/ui/Faq";
 
 export const metadata: Metadata = {
@@ -38,16 +37,7 @@ export default function TypingTestPage() {
     <div className="mx-auto max-w-6xl px-4 py-6">
       <h1 className="sr-only">Typing speed test — measure your words per minute</h1>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <TypingTest />
-        <aside className="hidden lg:block">
-          <AdSlot label="sidebar" height={600} />
-        </aside>
-      </div>
-
-      <div className="mt-6">
-        <AdSlot label="below results" height={100} />
-      </div>
+      <TypingTest />
 
       <article className="mx-auto mt-14 max-w-3xl">
         <h2 className="font-display text-2xl font-bold text-fg">How this typing test measures speed</h2>
@@ -88,8 +78,6 @@ export default function TypingTestPage() {
             directly from your net WPM.
           </p>
         </div>
-
-        <AdSlot label="content" height={100} className="mt-8" />
 
         <Faq items={FAQ_ITEMS} />
       </article>

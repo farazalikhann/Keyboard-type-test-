@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { KeyboardTester } from "@/components/keyboard-test/KeyboardTester";
-import { AdSlot } from "@/components/layout/AdSlot";
 import { Faq } from "@/components/ui/Faq";
 
 export const metadata: Metadata = {
@@ -43,16 +42,7 @@ export default function KeyboardTestPage() {
     <div className="mx-auto max-w-6xl px-4 py-6">
       <h1 className="sr-only">Keyboard test — check every key and find dead keys</h1>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <KeyboardTester />
-        <aside className="hidden lg:block">
-          <AdSlot label="sidebar" height={600} />
-        </aside>
-      </div>
-
-      <div className="mt-6">
-        <AdSlot label="below results" height={100} />
-      </div>
+      <KeyboardTester />
 
       <article className="mx-auto mt-14 max-w-3xl">
         <h2 className="font-display text-2xl font-bold text-fg">How to test a keyboard for dead or faulty keys</h2>
@@ -90,8 +80,6 @@ export default function KeyboardTestPage() {
             most standard keyboards straight out of the box, that is not a concern.
           </p>
         </div>
-
-        <AdSlot label="content" height={100} className="mt-8" />
 
         <Faq items={FAQ_ITEMS} />
       </article>
