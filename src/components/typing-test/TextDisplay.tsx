@@ -23,7 +23,14 @@ export function TextDisplay({ words, wordIndex, draft, draftStatuses, completed 
     const caret = caretRef.current;
     if (!inner || !caret) return;
     const lineHeight = parseFloat(getComputedStyle(inner).lineHeight) || 40;
-    const caretTop = caret.offsetTop;
+    // The caret's own absolutely-positioned wrapper is its offsetParent, so offsetTop is
+    // useless here (always ~0 regardless of which line we're on). Comparing bounding rects
+    // instead gives the caret's true position within the block — and since `inner` and the
+    // caret move together under the same transform, the current translateY cancels out of
+    // the difference, so this stays correct as the block keeps scrolling.
+    const innerRect = inner.getBoundingClientRect();
+    const caretRect = caret.getBoundingClientRect();
+    const caretTop = caretRect.top - innerRect.top;
     const line = Math.round(caretTop / lineHeight);
     const offsetLine = Math.max(0, line - 1);
     setTranslateY(offsetLine * lineHeight);
