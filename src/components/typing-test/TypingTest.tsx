@@ -39,6 +39,23 @@ export function TypingTest() {
     }
   }, [engine.status]);
 
+  // On phones, the on-screen keyboard eats the bottom of the viewport. The browser scrolls
+  // whatever element is focused into view when that keyboard opens, so if the hidden input
+  // sits somewhere disconnected from the visible text, the browser scrolls to the wrong spot
+  // and the current line ends up hidden behind the keyboard. Re-centering on focus and on every
+  // keyboard resize (visualViewport fires this as the keyboard animates in) keeps the actual
+  // text panel in view instead.
+  const recenterInput = useCallback(() => {
+    inputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : undefined;
+    if (!vv) return;
+    vv.addEventListener("resize", recenterInput);
+    return () => vv.removeEventListener("resize", recenterInput);
+  }, [recenterInput]);
+
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -140,14 +157,20 @@ export function TypingTest() {
               value={engine.draft}
               onChange={onChange}
               onKeyDown={onKeyDown}
-              onFocus={() => setFocused(true)}
+              onFocus={() => {
+                setFocused(true);
+                // give the on-screen keyboard time to animate open before centering on it
+                window.setTimeout(recenterInput, 350);
+              }}
               onBlur={() => setFocused(false)}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
+              enterKeyHint="done"
               aria-label="Typing test input"
-              className="absolute left-0 top-0 h-px w-px overflow-hidden opacity-0"
+              style={{ caretColor: "transparent" }}
+              className="absolute inset-x-0 bottom-0 h-px w-full overflow-hidden opacity-0"
             />
           </div>
         </Panel>
