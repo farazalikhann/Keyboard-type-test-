@@ -13,6 +13,10 @@ export interface CompletedWord {
   target: string;
   charStatuses: CharStatus[];
   extra: number;
+  /** characters actually typed for this word, including any overflow beyond the target's length */
+  typedLength: number;
+  /** mismatched + overflow characters, i.e. this word's contribution to uncorrected errors */
+  wrongCount: number;
 }
 
 export type EngineStatus = "idle" | "running" | "finished";
@@ -40,6 +44,48 @@ function initWords(mode: ContentMode, seed: number): string[] {
 // (Date.now() would differ between the SSR pass and hydration and break React's hydration check).
 const INITIAL_SEED = 0;
 
+function scoreWord(target: string, typed: string): CompletedWord {
+  const len = Math.max(target.length, typed.length);
+  const charStatuses: CharStatus[] = [];
+  let extra = 0;
+  for (let i = 0; i < len; i++) {
+    if (i >= target.length) {
+      extra++;
+      continue;
+    }
+    if (i >= typed.length) {
+      charStatuses.push("pending");
+      continue;
+    }
+    charStatuses.push(typed[i] === target[i] ? "correct" : "incorrect");
+  }
+  const wrongCount = charStatuses.filter((s) => s === "incorrect").length + extra;
+  return { target, charStatuses, extra, typedLength: typed.length, wrongCount };
+}
+
+function draftStatusesFor(target: string, typed: string): CharStatus[] {
+  const statuses: CharStatus[] = [];
+  for (let i = 0; i < typed.length; i++) {
+    statuses.push(i < target.length && typed[i] === target[i] ? "correct" : "incorrect");
+  }
+  return statuses;
+}
+
+function liveTotals(state: Pick<EngineState, "completed" | "words" | "wordIndex" | "draft">) {
+  let totalTyped = 0;
+  let uncorrectedErrors = 0;
+  for (const word of state.completed) {
+    totalTyped += word.typedLength;
+    uncorrectedErrors += word.wrongCount;
+  }
+  totalTyped += state.draft.length;
+  const target = state.words[state.wordIndex] ?? "";
+  for (let i = 0; i < state.draft.length; i++) {
+    if (i >= target.length || state.draft[i] !== target[i]) uncorrectedErrors += 1;
+  }
+  return { totalTyped, uncorrectedErrors };
+}
+
 export function useTypingEngine(duration: Duration, mode: ContentMode) {
   const [state, setState] = useState<EngineState>(() => ({
     words: initWords(mode, INITIAL_SEED),
@@ -56,14 +102,10 @@ export function useTypingEngine(duration: Duration, mode: ContentMode) {
   const startTimeRef = useRef<number | null>(null);
   const lastKeystrokeRef = useRef<number | null>(null);
   const rafRef = useRef<number>();
-  const totalTypedRef = useRef(0);
-  const uncorrectedErrorsRef = useRef(0);
 
   const reset = useCallback(() => {
     startTimeRef.current = null;
     lastKeystrokeRef.current = null;
-    totalTypedRef.current = 0;
-    uncorrectedErrorsRef.current = 0;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     setState({
       words: initWords(mode, Date.now()),
@@ -97,7 +139,8 @@ export function useTypingEngine(duration: Duration, mode: ContentMode) {
       if (prev.status === "finished") return prev;
       const now = performance.now();
       const elapsed = startTimeRef.current ? now - startTimeRef.current : 0;
-      const result = computeWpm(totalTypedRef.current, uncorrectedErrorsRef.current, elapsed);
+      const { totalTyped, uncorrectedErrors } = liveTotals(prev);
+      const result = computeWpm(totalTyped, uncorrectedErrors, elapsed);
       return { ...prev, status: "finished", elapsedMs: elapsed, result };
     });
   }, []);
@@ -119,7 +162,8 @@ export function useTypingEngine(duration: Duration, mode: ContentMode) {
         return;
       }
       setState((prev) => {
-        const result = computeWpm(totalTypedRef.current, uncorrectedErrorsRef.current, elapsed);
+        const { totalTyped, uncorrectedErrors } = liveTotals(prev);
+        const result = computeWpm(totalTyped, uncorrectedErrors, elapsed);
         return { ...prev, elapsedMs: elapsed, result };
       });
       rafRef.current = requestAnimationFrame(tick);
@@ -130,124 +174,95 @@ export function useTypingEngine(duration: Duration, mode: ContentMode) {
     };
   }, [state.status, duration, finish]);
 
-  const logTick = useCallback((error: boolean) => {
-    const now = performance.now();
-    const prevT = lastKeystrokeRef.current;
-    const interval = prevT == null ? 0 : now - prevT;
-    lastKeystrokeRef.current = now;
-    setState((prev) => ({ ...prev, ticks: [...prev.ticks, { interval, error }] }));
-  }, []);
+  const ensureWordBuffer = useCallback(
+    (words: string[], wordIndex: number): string[] => {
+      if (mode !== "words") return words;
+      if (words.length - wordIndex > 15) return words;
+      return [...words, ...buildWordSample(40, Date.now() + words.length)];
+    },
+    [mode]
+  );
 
-  const ensureWordBuffer = useCallback((words: string[], wordIndex: number): string[] => {
-    if (mode !== "words") return words;
-    if (words.length - wordIndex > 15) return words;
-    return [...words, ...buildWordSample(40, Date.now() + words.length)];
-  }, [mode]);
-
-  const commitWord = useCallback(() => {
-    setState((prev) => {
-      if (prev.status !== "running") return prev;
-      const target = prev.words[prev.wordIndex] ?? "";
-      const draft = prev.draft;
-      const len = Math.max(target.length, draft.length);
-      const charStatuses: CharStatus[] = [];
-      let extra = 0;
-      for (let i = 0; i < len; i++) {
-        if (i >= target.length) {
-          extra++;
-          continue;
-        }
-        if (i >= draft.length) {
-          charStatuses.push("pending");
-          continue;
-        }
-        charStatuses.push(draft[i] === target[i] ? "correct" : "incorrect");
-      }
-      totalTypedRef.current += draft.length;
-      const wrongInWord = charStatuses.filter((s) => s === "incorrect").length + extra;
-      uncorrectedErrorsRef.current += wrongInWord;
-
-      const nextWords = ensureWordBuffer(prev.words, prev.wordIndex + 1);
-      const finishedQuote = mode === "quote" && prev.wordIndex + 1 >= nextWords.length;
-
-      return {
-        ...prev,
-        words: nextWords,
-        wordIndex: prev.wordIndex + 1,
-        draft: "",
-        draftStatuses: [],
-        completed: [...prev.completed, { target, charStatuses, extra }],
-        status: finishedQuote ? "finished" : prev.status,
-      };
-    });
-  }, [ensureWordBuffer, mode]);
-
-  const handleChar = useCallback(
-    (nextDraft: string) => {
+  /**
+   * Handles the full current value of the input on every change. Space is never intercepted at
+   * the keydown level — many mobile keyboards (Gboard, predictive/swipe input) commit whole words
+   * or punctuation through input events rather than firing a reliable keydown for the space bar,
+   * so relying on keydown preventDefault to trigger word advance silently breaks on phones. Instead
+   * the raw value is allowed to contain whitespace, and any complete "word + boundary" segments in
+   * it are committed here, whatever produced them (a single space press, autocomplete, or a paste).
+   */
+  const type = useCallback(
+    (rawValue: string) => {
       setState((prev) => {
+        if (prev.status === "finished") return prev;
+
         let status = prev.status;
         if (status === "idle") {
+          if (rawValue.length === 0) return prev;
           startTimeRef.current = performance.now();
           lastKeystrokeRef.current = startTimeRef.current;
           status = "running";
         }
-        if (status !== "running") return prev;
 
-        const target = prev.words[prev.wordIndex] ?? "";
-        const isBackspace = nextDraft.length < prev.draft.length;
-        const draftStatuses: CharStatus[] = [];
-        for (let i = 0; i < nextDraft.length; i++) {
-          if (i >= target.length) {
-            draftStatuses.push("incorrect");
-          } else {
-            draftStatuses.push(nextDraft[i] === target[i] ? "correct" : "incorrect");
-          }
+        const before = liveTotals(prev);
+
+        let words = prev.words;
+        let wordIndex = prev.wordIndex;
+        let completed = prev.completed;
+        let remaining = rawValue;
+        let finished = false;
+
+        while (!finished) {
+          const boundary = remaining.search(/\s/);
+          if (boundary === -1) break;
+          const wordPart = remaining.slice(0, boundary);
+          remaining = remaining.slice(boundary + 1);
+          if (wordPart.length === 0) continue; // stray/duplicate whitespace, e.g. a double space — ignore
+
+          const target = words[wordIndex] ?? "";
+          completed = [...completed, scoreWord(target, wordPart)];
+          wordIndex += 1;
+          words = ensureWordBuffer(words, wordIndex);
+          if (mode === "quote" && wordIndex >= words.length) finished = true;
         }
 
-        if (!isBackspace) {
-          const addedChar = nextDraft[nextDraft.length - 1];
-          const idx = nextDraft.length - 1;
-          const correct = idx < target.length && addedChar === target[idx];
-          totalTypedRef.current += 1;
-          if (!correct) uncorrectedErrorsRef.current += 1;
+        const target = words[wordIndex] ?? "";
+        const draftStatuses = draftStatusesFor(target, remaining);
+        const nextState: EngineState = {
+          ...prev,
+          words,
+          wordIndex,
+          draft: remaining,
+          draftStatuses,
+          completed,
+          status: finished ? "finished" : status,
+        };
+
+        const after = liveTotals(nextState);
+        if (after.totalTyped > before.totalTyped) {
+          const now = performance.now();
+          const prevT = lastKeystrokeRef.current;
+          const interval = prevT == null ? 0 : now - prevT;
+          lastKeystrokeRef.current = now;
+          const error = after.uncorrectedErrors > before.uncorrectedErrors;
+          nextState.ticks = [...prev.ticks, { interval, error }];
         }
 
-        return { ...prev, draft: nextDraft, draftStatuses, status };
+        if (finished) {
+          const elapsed = startTimeRef.current ? performance.now() - startTimeRef.current : 0;
+          nextState.elapsedMs = elapsed;
+          nextState.result = computeWpm(after.totalTyped, after.uncorrectedErrors, elapsed);
+        }
+
+        return nextState;
       });
     },
-    []
+    [ensureWordBuffer, mode]
   );
-
-  const onKeystrokeForTrace = useCallback(
-    (nextDraft: string, prevDraft: string) => {
-      if (nextDraft.length <= prevDraft.length) return; // backspace, no trace tick
-      const target = state.words[state.wordIndex] ?? "";
-      const idx = nextDraft.length - 1;
-      const correct = idx < target.length && nextDraft[idx] === target[idx];
-      logTick(!correct);
-    },
-    [logTick, state.words, state.wordIndex]
-  );
-
-  const type = useCallback(
-    (nextDraft: string) => {
-      if (state.status === "finished") return;
-      onKeystrokeForTrace(nextDraft, state.draft);
-      handleChar(nextDraft);
-    },
-    [handleChar, onKeystrokeForTrace, state.draft, state.status]
-  );
-
-  const space = useCallback(() => {
-    if (state.status !== "running") return;
-    logTick(false);
-    commitWord();
-  }, [commitWord, logTick, state.status]);
 
   return {
     ...state,
     type,
-    space,
     reset,
     finishNow: finish,
   };
