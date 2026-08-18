@@ -26,8 +26,10 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          GITHUB_PAGES: "true"
+          CUSTOM_DOMAIN: "true"
       - run: touch out/.nojekyll
+      - name: Verify CNAME made it into the export
+        run: test -f out/CNAME && cat out/CNAME
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
