@@ -9,9 +9,16 @@ import { TextDisplay } from "./TextDisplay";
 import { ResultsPanel } from "./ResultsPanel";
 import { useTypingEngine, type ContentMode, type Duration } from "./useTypingEngine";
 
-export function TypingTest() {
-  const [duration, setDuration] = useState<Duration>(30);
-  const [mode, setMode] = useState<ContentMode>("words");
+interface TypingTestProps {
+  defaultDuration?: Duration;
+  durationOptions?: Duration[];
+  defaultMode?: ContentMode;
+  modeOptions?: ContentMode[];
+}
+
+export function TypingTest({ defaultDuration = 30, durationOptions, defaultMode = "words", modeOptions }: TypingTestProps = {}) {
+  const [duration, setDuration] = useState<Duration>(defaultDuration);
+  const [mode, setMode] = useState<ContentMode>(defaultMode);
   const inputRef = useRef<HTMLInputElement>(null);
   const engine = useTypingEngine(duration, mode);
   const [focused, setFocused] = useState(false);
@@ -85,6 +92,8 @@ export function TypingTest() {
           onDuration={setDuration}
           onMode={setMode}
           disabled={engine.status === "running"}
+          durations={durationOptions}
+          modes={modeOptions}
         />
         {engine.status !== "idle" && (
           <Button variant="ghost" onClick={engine.reset}>

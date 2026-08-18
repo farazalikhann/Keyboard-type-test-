@@ -78,6 +78,67 @@ export function randomQuote(seedOffset = 0): Quote {
   return QUOTES[idx];
 }
 
+const PUNCTUATION_END: string[] = [".", ",", "!", "?", ";", ":"];
+
+export function buildPunctuationSample(count: number, seedOffset = 0): string[] {
+  const words: string[] = [];
+  const poolSize = COMMON_WORDS.length;
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(pseudoRandom(i + seedOffset) * poolSize);
+    let word = COMMON_WORDS[idx];
+    const roll = pseudoRandom(i + seedOffset + 1000);
+    if (roll < 0.08) {
+      word = word[0].toUpperCase() + word.slice(1);
+    }
+    if (roll > 0.75 && roll < 0.88) {
+      word += PUNCTUATION_END[Math.floor(pseudoRandom(i + seedOffset + 2000) * PUNCTUATION_END.length)];
+    } else if (roll >= 0.88 && roll < 0.93) {
+      word = `"${word}"`;
+    } else if (roll >= 0.93) {
+      word = `(${word})`;
+    }
+    words.push(word);
+  }
+  return words;
+}
+
+export function buildNumberSample(count: number, seedOffset = 0): string[] {
+  const tokens: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const roll = pseudoRandom(i + seedOffset);
+    const digits = 1 + Math.floor(pseudoRandom(i + seedOffset + 500) * 5);
+    let token = "";
+    for (let d = 0; d < digits; d++) {
+      token += Math.floor(pseudoRandom(i * 10 + d + seedOffset + 3000) * 10).toString();
+    }
+    if (roll < 0.15) token = `${token}.${Math.floor(pseudoRandom(i + seedOffset + 4000) * 100)}`;
+    else if (roll < 0.3) token = `${token}%`;
+    else if (roll < 0.4) token = `-${token}`;
+    tokens.push(token);
+  }
+  return tokens;
+}
+
+// Each token must be a single whitespace-free unit — useTypingEngine treats any space in the
+// typed input as a word boundary, so a token containing an internal space could never be typed.
+const CODE_TOKENS: string[] = [
+  "const", "let", "function", "return", "if", "else", "for", "while", "import", "export",
+  "class", "new", "this", "null", "true", "false", "async", "await", "try", "catch",
+  "x", "y", "i", "n", "result", "value", "data", "index", "item", "total",
+  "=", "==", "===", "!=", "+", "-", "*", "/", "=>", "&&", "||", "!",
+  "(", ")", "{", "}", "[", "]", ";", ".", ",",
+  "foo()", "bar()", "console.log(x);", "return total;", "array.length", "i++)",
+];
+
+export function buildCodeSample(count: number, seedOffset = 0): string[] {
+  const tokens: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(pseudoRandom(i + seedOffset) * CODE_TOKENS.length);
+    tokens.push(CODE_TOKENS[idx]);
+  }
+  return tokens;
+}
+
 // Deterministic-enough pseudo-random so server/client renders can agree when a seed is fixed,
 // while still varying between attempts when the caller passes Date.now() as the offset.
 function pseudoRandom(seed: number): number {

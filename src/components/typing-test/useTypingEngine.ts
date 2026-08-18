@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { buildWordSample, randomQuote } from "@/lib/wordLists";
+import { buildWordSample, randomQuote, buildPunctuationSample, buildNumberSample, buildCodeSample } from "@/lib/wordLists";
 import { computeWpm, WpmResult } from "@/lib/wpm";
 import type { TraceTick } from "@/components/telemetry/TelemetryTrace";
 
-export type ContentMode = "words" | "quote";
-export type Duration = 15 | 30 | 60;
+export type ContentMode = "words" | "quote" | "punctuation" | "numbers" | "code";
+export type Duration = 15 | 30 | 60 | 180 | 300;
 export type CharStatus = "pending" | "correct" | "incorrect";
 
 export interface CompletedWord {
@@ -33,11 +33,18 @@ interface EngineState {
   result: WpmResult | null;
 }
 
+const WORD_LIST_GENERATORS: Record<Exclude<ContentMode, "quote">, (count: number, seed: number) => string[]> = {
+  words: buildWordSample,
+  punctuation: buildPunctuationSample,
+  numbers: buildNumberSample,
+  code: buildCodeSample,
+};
+
 function initWords(mode: ContentMode, seed: number): string[] {
   if (mode === "quote") {
     return randomQuote(seed).text.split(" ");
   }
-  return buildWordSample(80, seed);
+  return WORD_LIST_GENERATORS[mode](80, seed);
 }
 
 // A fixed seed for the very first render keeps server and client markup identical
@@ -176,9 +183,9 @@ export function useTypingEngine(duration: Duration, mode: ContentMode) {
 
   const ensureWordBuffer = useCallback(
     (words: string[], wordIndex: number): string[] => {
-      if (mode !== "words") return words;
+      if (mode === "quote") return words;
       if (words.length - wordIndex > 15) return words;
-      return [...words, ...buildWordSample(40, Date.now() + words.length)];
+      return [...words, ...WORD_LIST_GENERATORS[mode](40, Date.now() + words.length)];
     },
     [mode]
   );
