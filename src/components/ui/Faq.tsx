@@ -1,3 +1,5 @@
+import { JsonLd } from "@/components/seo/JsonLd";
+
 interface FaqItem {
   question: string;
   answer: string;
@@ -19,11 +21,7 @@ export function Faq({ items }: { items: FaqItem[] }) {
 
   return (
     <section aria-labelledby="faq-heading" className="mt-10">
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={jsonLd} />
       <h2 id="faq-heading" className="font-display text-xl font-bold text-fg">
         Frequently asked questions
       </h2>
