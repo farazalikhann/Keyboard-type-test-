@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { KeyboardTester } from "@/components/keyboard-test/KeyboardTester";
 import { Faq } from "@/components/ui/Faq";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { ToolSchema } from "@/components/seo/ToolSchema";
+import { AdSlot } from "@/components/ads/AdSlot";
+import { RelatedTools } from "@/components/tools/RelatedTools";
+import { RelatedReading } from "@/components/blog/RelatedReading";
 
 export const metadata: Metadata = {
   title: "Keyboard test — check every key and find dead keys",
@@ -40,9 +45,25 @@ const FAQ_ITEMS = [
 export default function KeyboardTestPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
+      <ToolSchema
+        name="Keyboard test"
+        description="Test every key on a keyboard, see which ones register, and generate a diagnostic report for dead keys."
+        path="/keyboard-test"
+        featureList={[
+          "ANSI, ISO, and TKL layout support",
+          "Live key event readout with physical key code",
+          "Held modifier tracking",
+          "Downloadable diagnostic report image",
+        ]}
+      />
+      <Breadcrumbs items={[{ label: "Keyboard test" }]} />
       <h1 className="sr-only">Keyboard test — check every key and find dead keys</h1>
 
       <KeyboardTester />
+
+      <div className="mt-6">
+        <AdSlot slotId="0000000003" height={100} label="below results" />
+      </div>
 
       <article className="mx-auto mt-14 max-w-3xl">
         <h2 className="font-display text-2xl font-bold text-fg">How to test a keyboard for dead or faulty keys</h2>
@@ -82,6 +103,11 @@ export default function KeyboardTestPage() {
         </div>
 
         <Faq items={FAQ_ITEMS} />
+
+        <RelatedTools currentPath="/keyboard-test" />
+        <RelatedReading toolPath="/keyboard-test" />
+
+        <AdSlot slotId="0000000004" height={100} label="content" className="mt-10" />
       </article>
     </div>
   );

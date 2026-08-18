@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useTheme } from "@/lib/theme";
-
-const TOOLS = [
-  { href: "/typing-test", label: "Typing test" },
-  { href: "/keyboard-test", label: "Keyboard test" },
-];
+import { ToolsMenu } from "./ToolsMenu";
 
 export function Header() {
-  const pathname = usePathname();
   const { theme, toggle } = useTheme();
 
   return (
@@ -20,36 +14,24 @@ export function Header() {
           <LogoMark />
           <span>Keyboard Toolkit</span>
         </Link>
-        <nav className="hidden items-center gap-1 sm:flex" aria-label="Tools">
-          {TOOLS.map((tool) => {
-            const active = pathname === tool.href;
-            return (
-              <Link
-                key={tool.href}
-                href={tool.href}
-                className={`rounded-sm px-3 py-1.5 font-data text-xs uppercase tracking-wide transition-colors ${
-                  active
-                    ? "bg-panel-raised text-signal"
-                    : "text-fg-muted hover:text-fg"
-                }`}
-                aria-current={active ? "page" : undefined}
-              >
-                {tool.label}
-              </Link>
-            );
-          })}
+        <nav className="hidden items-center gap-1 sm:flex" aria-label="Primary">
+          <ToolsMenu />
+          <Link
+            href="/blog"
+            className="rounded-sm px-3 py-1.5 font-data text-xs uppercase tracking-wide text-fg-muted transition-colors hover:text-fg"
+          >
+            Guides
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
-          <nav className="flex items-center gap-1 sm:hidden" aria-label="Tools">
-            {TOOLS.map((tool) => (
-              <Link
-                key={tool.href}
-                href={tool.href}
-                className="rounded-sm px-2 py-1.5 font-data text-[11px] uppercase tracking-wide text-fg-muted hover:text-fg"
-              >
-                {tool.label}
-              </Link>
-            ))}
+          <nav className="flex items-center gap-1 sm:hidden" aria-label="Primary">
+            <ToolsMenu />
+            <Link
+              href="/blog"
+              className="rounded-sm px-2 py-1.5 font-data text-[11px] uppercase tracking-wide text-fg-muted hover:text-fg"
+            >
+              Guides
+            </Link>
           </nav>
           <button
             type="button"

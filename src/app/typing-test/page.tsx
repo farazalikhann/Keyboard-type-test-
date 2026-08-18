@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { TypingTest } from "@/components/typing-test/TypingTest";
 import { Faq } from "@/components/ui/Faq";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { ToolSchema } from "@/components/seo/ToolSchema";
+import { AdSlot } from "@/components/ads/AdSlot";
+import { RelatedTools } from "@/components/tools/RelatedTools";
+import { RelatedReading } from "@/components/blog/RelatedReading";
 
 export const metadata: Metadata = {
   title: "Typing speed test — measure your WPM",
@@ -35,9 +40,26 @@ const FAQ_ITEMS = [
 export default function TypingTestPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
+      <ToolSchema
+        name="Typing speed test"
+        description="Measure typing speed in words per minute with live accuracy tracking and a rhythm trace."
+        path="/typing-test"
+        featureList={[
+          "15, 30, and 60 second test durations",
+          "Word list and quote content modes",
+          "Live WPM and accuracy",
+          "Net and raw WPM comparison",
+          "Live rhythm trace of keystroke timing",
+        ]}
+      />
+      <Breadcrumbs items={[{ label: "Typing test" }]} />
       <h1 className="sr-only">Typing speed test — measure your words per minute</h1>
 
       <TypingTest />
+
+      <div className="mt-6">
+        <AdSlot slotId="0000000001" height={100} label="below results" />
+      </div>
 
       <article className="mx-auto mt-14 max-w-3xl">
         <h2 className="font-display text-2xl font-bold text-fg">How this typing test measures speed</h2>
@@ -80,6 +102,11 @@ export default function TypingTestPage() {
         </div>
 
         <Faq items={FAQ_ITEMS} />
+
+        <RelatedTools currentPath="/typing-test" />
+        <RelatedReading toolPath="/typing-test" />
+
+        <AdSlot slotId="0000000002" height={100} label="content" className="mt-10" />
       </article>
     </div>
   );
