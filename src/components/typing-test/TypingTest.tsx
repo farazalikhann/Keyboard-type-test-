@@ -111,7 +111,7 @@ export function TypingTest({ defaultDuration = 30, durationOptions, defaultMode 
             focused ? "shadow-[0_0_0_1px_var(--signal),0_0_28px_-10px_var(--signal)]" : ""
           }`}
           corner={
-            <div className="flex items-center gap-4 font-data text-xs text-fg-muted">
+            <div className="flex items-center gap-4 font-data text-xs text-fg-muted" aria-live="polite" aria-atomic="true">
               <span>
                 Accuracy <span className="tabular-nums text-fg">{Math.round(liveAccuracy)}%</span>
               </span>

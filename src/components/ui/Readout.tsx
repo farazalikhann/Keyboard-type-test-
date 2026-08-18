@@ -52,7 +52,11 @@ export function Readout({ value, decimals = 0, live = false, size = "xl", suffix
   const sizeClass = size === "xl" ? "text-6xl sm:text-7xl" : "text-4xl sm:text-5xl";
 
   return (
-    <span className={`tabular-nums font-data font-medium leading-none ${sizeClass} ${className}`}>
+    <span
+      className={`tabular-nums font-data font-medium leading-none ${sizeClass} ${className}`}
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {display.toFixed(decimals)}
       {suffix && <span className="ml-1 text-[0.35em] font-normal uppercase tracking-wide text-fg-muted">{suffix}</span>}
     </span>
