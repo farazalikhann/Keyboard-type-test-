@@ -4,7 +4,7 @@ export const post: Post = {
   slug: "touch-typing-vs-hunt-and-peck",
   title: "Touch Typing vs Hunt and Peck: Why Finger Placement Changes Everything",
   description:
-    "A practical comparison of touch typing and hunt and peck typing, what each one actually costs you, and how to move from one to the other without losing speed for weeks.",
+    "A practical comparison of touch typing and hunt and peck typing, what each one costs you, and how to switch without losing weeks of speed.",
   datePublished: "2026-01-26",
   dateModified: "2026-01-26",
   relatedTools: ["/typing-test", "/typing-practice"],

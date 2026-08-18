@@ -10,7 +10,7 @@ import { RelatedReading } from "@/components/blog/RelatedReading";
 export const metadata: Metadata = {
   title: "Keyboard test — check every key and find dead keys",
   description:
-    "Test every key on your keyboard, see which ones never register, and generate a diagnostic report for a warranty claim or return request. Works with ANSI, ISO, and TKL layouts.",
+    "Test every key on your keyboard, see which ones never register, and generate a diagnostic report for a warranty claim. Supports ANSI, ISO, and TKL.",
   alternates: { canonical: "/keyboard-test" },
 };
 

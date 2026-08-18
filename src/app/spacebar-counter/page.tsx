@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import type { Metadata } from "next";
 import { SpacebarCounter } from "@/components/click-test/SpacebarCounter";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
@@ -51,6 +52,19 @@ export default function SpacebarCounterPage() {
             complete press and release counts once, even if you press very quickly. The trace beneath the
             counter shows the interval between each press, which is a quick way to see how consistent your
             pressing rhythm actually was rather than just the final total.
+          </p>
+          <p>
+            Most people settle into a rhythm somewhere between 6 and 10 presses per second using a single
+            finger, alternating fingers or using a thumb-heavy technique can push that higher, though speed
+            drops off noticeably as the timer runs longer and fatigue sets in. Comparing your 5 second result
+            against your 60 second result is a quick way to see the gap between your peak and your sustained
+            pace.
+          </p>
+          <p>
+            If a press occasionally fails to register even though you're confident you released and pressed
+            the key cleanly, that can be worth checking on the <a href="/keyboard-test" className="text-signal underline underline-offset-2">keyboard test</a>{" "}
+            page, which checks whether the spacebar registers reliably on its own, without the pressure of a
+            timer running.
           </p>
         </div>
 
